@@ -5,8 +5,12 @@ import br.com.wilner.couponapi.dto.response.CouponResponse;
 import br.com.wilner.couponapi.persistence.entity.CouponEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR
+)
 public interface CouponMapper {
 
     CouponEntity toEntity(Coupon coupon);
@@ -29,7 +33,10 @@ public interface CouponMapper {
                 entity.getStatus(),
                 entity.isPublished(),
                 entity.isRedeemed(),
-                entity.isDeleted()
+                entity.isDeleted(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt()
         );
     }
 }

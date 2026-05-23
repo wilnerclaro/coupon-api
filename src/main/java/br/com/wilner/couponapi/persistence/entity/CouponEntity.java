@@ -33,7 +33,7 @@ public class CouponEntity {
     @Column(name = "code", nullable = false, length = 6)
     private String code;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", nullable = false, length = 255)
     private String description;
 
     @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
@@ -54,4 +54,13 @@ public class CouponEntity {
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }
