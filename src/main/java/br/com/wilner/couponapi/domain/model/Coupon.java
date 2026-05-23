@@ -180,7 +180,11 @@ public class Coupon {
             return null;
         }
 
-        return discountValue.setScale(DISCOUNT_SCALE, RoundingMode.UNNECESSARY);
+        try {
+            return discountValue.setScale(DISCOUNT_SCALE, RoundingMode.UNNECESSARY);
+        } catch (ArithmeticException exception) {
+            throw new BusinessException("Discount value must have at most 2 decimal places");
+        }
     }
 
     private static void validateCode(String code) {
