@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface CouponRepository extends JpaRepository<CouponEntity, UUID> {
 
     Optional<CouponEntity> findByIdAndDeletedFalse(UUID id);
+
+    boolean existsByCodeAndDeletedFalse(String code);
 }

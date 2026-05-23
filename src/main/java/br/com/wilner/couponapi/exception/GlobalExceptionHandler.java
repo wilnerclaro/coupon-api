@@ -2,8 +2,12 @@ package br.com.wilner.couponapi.exception;
 
 import br.com.wilner.couponapi.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -20,6 +25,23 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        ErrorResponse response = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
+            DuplicateResourceException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.CONFLICT;
 
         ErrorResponse response = ErrorResponse.of(
                 status.value(),
@@ -72,11 +94,73 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        ErrorResponse response = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                "Malformed JSON request or invalid field type",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        List<String> details = exception.getConstraintViolations()
+                .stream()
+                .map(violation -> "%s: %s".formatted(
+                        violation.getPropertyPath(),
+                        violation.getMessage()
+                ))
+                .toList();
+
+        ErrorResponse response = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                "Invalid request data",
+                request.getRequestURI(),
+                details
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+            DataIntegrityViolationException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        ErrorResponse response = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                "Request violates database constraints",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(
             Exception exception,
             HttpServletRequest request
     ) {
+        log.error("Unexpected error while processing request {}", request.getRequestURI(), exception);
+
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         ErrorResponse response = ErrorResponse.of(
@@ -90,6 +174,9 @@ public class GlobalExceptionHandler {
     }
 
     private String formatFieldError(FieldError fieldError) {
-        return "%s: %s".formatted(fieldError.getField(), fieldError.getDefaultMessage());
+        return "%s: %s".formatted(
+                fieldError.getField(),
+                fieldError.getDefaultMessage()
+        );
     }
 }

@@ -8,7 +8,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.UUID;
@@ -19,30 +26,41 @@ import java.util.UUID;
 @Tag(name = "Coupons", description = "Operations for coupon management")
 public class CouponController {
 
-    private final CouponService service;
+    private final CouponService couponService;
 
     @PostMapping
     @Operation(summary = "Create a new coupon")
-    public ResponseEntity<CouponResponse>create(
-            @Valid @RequestBody CouponCreateRequest request){
+    public ResponseEntity<CouponResponse> create(
+            @Valid @RequestBody CouponCreateRequest request
+    ) {
+        CouponResponse response = couponService.create(request);
 
-        CouponResponse response = service.create(request);
-        URI location = URI.create("/coupon/%s".formatted(response.id()));
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+
         return ResponseEntity.created(location).body(response);
-
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Find coupon by id")
-    public ResponseEntity<CouponResponse>findById(@PathVariable UUID id){
-        CouponResponse response = service.findById(id);
+    public ResponseEntity<CouponResponse> findById(
+            @PathVariable UUID id
+    ) {
+        CouponResponse response = couponService.findById(id);
+
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete coupon by id")
-    public ResponseEntity<Void>delete(@PathVariable UUID id){
-        service.delete(id);
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID id
+    ) {
+        couponService.delete(id);
+
         return ResponseEntity.noContent().build();
     }
 }
